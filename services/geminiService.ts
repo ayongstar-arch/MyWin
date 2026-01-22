@@ -1,13 +1,26 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { MatchLog, SystemMetrics } from "../types";
 
+// Helper to safely get API Key in both Vite (Frontend) and Node (Backend)
+const getApiKey = () => {
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_GEMINI_API_KEY;
+    }
+  } catch (e) { }
+  return process.env.GEMINI_API_KEY;
+};
+
 export const auditFairness = async (
   logs: MatchLog[],
   metrics: SystemMetrics
 ): Promise<{ analysis: string; score: number }> => {
-  if (!process.env.API_KEY) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
     return {
-      analysis: "ไม่พบ API Key ไม่สามารถทำการตรวจสอบด้วย AI ได้",
+      analysis: "ไม่พบ API Key (VITE_GEMINI_API_KEY) ไม่สามารถทำการตรวจสอบด้วย AI ได้",
       score: 0
     };
   }
@@ -24,10 +37,10 @@ export const auditFairness = async (
     
     Recent Dispatch Logs (Sample):
     ${JSON.stringify(recentLogs.map(l => ({
-      wait: l.riderWaitTime,
-      dist: l.distance,
-      score: l.fairnessScore
-    })))}
+    wait: l.riderWaitTime,
+    dist: l.distance,
+    score: l.fairnessScore
+  })))}
 
     Evaluate if the system is preventing starvation (long wait times) effectively.
     Is the trade-off between efficiency (distance) and fairness (wait time) balanced?
@@ -37,7 +50,7 @@ export const auditFairness = async (
   `;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -55,7 +68,7 @@ export const auditFairness = async (
 
     const jsonText = response.text;
     if (!jsonText) throw new Error("Empty response");
-    
+
     return JSON.parse(jsonText);
   } catch (error) {
     console.error("Gemini Audit Error:", error);
@@ -67,26 +80,26 @@ export const auditFairness = async (
 };
 
 export const generateRiderPersona = async (): Promise<{ name: string; destinationType: string }> => {
-    if (!process.env.API_KEY) return { name: "Simulated User", destinationType: "Random Location" };
+  if (!process.env.API_KEY) return { name: "Simulated User", destinationType: "Random Location" };
 
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: "Generate a realistic Southeast Asian rider persona name (first name only) and a short destination type (e.g., 'Night Market', 'Tech Park'). JSON format.",
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        name: { type: Type.STRING },
-                        destinationType: { type: Type.STRING }
-                    }
-                }
-            }
-        });
-        return JSON.parse(response.text || "{}");
-    } catch (e) {
-        return { name: "Rider", destinationType: "General" };
-    }
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: "Generate a realistic Southeast Asian rider persona name (first name only) and a short destination type (e.g., 'Night Market', 'Tech Park'). JSON format.",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            destinationType: { type: Type.STRING }
+          }
+        }
+      }
+    });
+    return JSON.parse(response.text || "{}");
+  } catch (e) {
+    return { name: "Rider", destinationType: "General" };
+  }
 }

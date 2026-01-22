@@ -655,9 +655,9 @@ const PassengerApp: React.FC<PassengerAppProps> = ({ riderData }) => {
                         </button>
                     </div>
                 </div>
-                </div >
-            );
-        }
+            </div >
+        );
+    }
 
 if (authStep === 'REGISTER') {
     return (
