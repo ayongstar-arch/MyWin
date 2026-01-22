@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { DataSource } from 'typeorm'; 
+import { DataSource } from 'typeorm';
 import { TopupDto, AdminRefundDto } from './dtos';
 import { PromotionService } from './promotion.service';
 
@@ -25,7 +25,7 @@ export class CreditService {
 
   private async acquireLock(passengerId: string): Promise<boolean> {
     const key = `lock:passenger:${passengerId}:credit`;
-    const result = await this.redis.set(key, 'LOCKED', 'NX', 'EX', 5);
+    const result = await this.redis.set(key, 'LOCKED', 'EX', 5, 'NX');
     return result === 'OK';
   }
 
@@ -41,7 +41,7 @@ export class CreditService {
     const config = await this.dataSource.query(
       `SELECT credit_per_call FROM ${TABLE_CONFIG} WHERE active = true ORDER BY effective_time DESC LIMIT 1`
     );
-    
+
     const rate = config[0]?.credit_per_call || 2.0;
     await this.redis.set(cacheKey, rate, 'EX', 60);
     return rate;
@@ -64,8 +64,8 @@ export class CreditService {
     // In a real app, this would be a COUNT(*) query on trip history or wallet deductions
     // Simulating query:
     const res = await this.dataSource.query(
-       `SELECT COUNT(*) as count FROM ${TABLE_WALLET_TXN} WHERE passenger_id = $1 AND type = 'DEDUCT'`,
-       [passengerId]
+      `SELECT COUNT(*) as count FROM ${TABLE_WALLET_TXN} WHERE passenger_id = $1 AND type = 'DEDUCT'`,
+      [passengerId]
     );
     return res[0]?.count ? parseInt(res[0].count) : 0;
   }
@@ -74,23 +74,23 @@ export class CreditService {
    * Check if passenger has enough points without deducting.
    */
   async checkAvailability(passengerId: string): Promise<boolean> {
-     // Check basic rate
-     const baseCost = await this.getEffectiveRate();
-     
-     // Check for Free Ride Promo?
-     // Note: Usually we verify basic solvency even if ride is free to prevent abuse, 
-     // but for "First Ride Free", we should allow 0 balance.
-     
-     const rideCount = await this.getRideCount(passengerId);
-     const currentHour = new Date().getHours();
-     const promo = this.promotionService.evaluateRide(passengerId, rideCount, currentHour);
+    // Check basic rate
+    const baseCost = await this.getEffectiveRate();
 
-     if (promo.isFree) return true;
+    // Check for Free Ride Promo?
+    // Note: Usually we verify basic solvency even if ride is free to prevent abuse, 
+    // but for "First Ride Free", we should allow 0 balance.
 
-     const balance = await this.getBalance(passengerId);
-     const effectiveCost = Math.max(0, baseCost - promo.discount);
-     
-     return balance >= effectiveCost;
+    const rideCount = await this.getRideCount(passengerId);
+    const currentHour = new Date().getHours();
+    const promo = this.promotionService.evaluateRide(passengerId, rideCount, currentHour);
+
+    if (promo.isFree) return true;
+
+    const balance = await this.getBalance(passengerId);
+    const effectiveCost = Math.max(0, baseCost - promo.discount);
+
+    return balance >= effectiveCost;
   }
 
   /**
@@ -134,11 +134,11 @@ export class CreditService {
          VALUES ($1, 'TOPUP', $2, $3, $4, 'SUCCESS', NOW())`,
         [dto.passengerId, totalPoints, dto.amount, paymentId]
       );
-      
+
       // 5. Update Promo Stats
       if (rule) {
-          this.promotionService.logUsage(rule.id, bonus);
-          this.logger.log(`Applied Promo ${rule.name} for User ${dto.passengerId}: +${bonus} points`);
+        this.promotionService.logUsage(rule.id, bonus);
+        this.logger.log(`Applied Promo ${rule.name} for User ${dto.passengerId}: +${bonus} points`);
       }
 
       await queryRunner.commitTransaction();
@@ -178,20 +178,20 @@ export class CreditService {
       // 3. Check Balance (skip if free)
       if (!isFree) {
         const wallet = await queryRunner.query(
-            `SELECT point_balance FROM ${TABLE_WALLET} WHERE passenger_id = $1 FOR UPDATE`,
-            [passengerId]
+          `SELECT point_balance FROM ${TABLE_WALLET} WHERE passenger_id = $1 FOR UPDATE`,
+          [passengerId]
         );
         if (!wallet.length || parseFloat(wallet[0].point_balance) < effectiveCost) {
-            throw new BadRequestException('Insufficient points.');
+          throw new BadRequestException('Insufficient points.');
         }
       }
 
       // 4. Deduct
       if (effectiveCost > 0) {
-          await queryRunner.query(
-            `UPDATE ${TABLE_WALLET} SET point_balance = point_balance - $1, updated_at = NOW() WHERE passenger_id = $2`,
-            [effectiveCost, passengerId]
-          );
+        await queryRunner.query(
+          `UPDATE ${TABLE_WALLET} SET point_balance = point_balance - $1, updated_at = NOW() WHERE passenger_id = $2`,
+          [effectiveCost, passengerId]
+        );
       }
 
       // 5. Log Deduction
@@ -204,9 +204,9 @@ export class CreditService {
 
       // 6. Update Promo Stats
       if (rule) {
-          const benefitValue = isFree ? baseCost : discount;
-          this.promotionService.logUsage(rule.id, benefitValue);
-          this.logger.log(`Applied Ride Promo ${rule.name} for User ${passengerId}: Saved ${benefitValue} points`);
+        const benefitValue = isFree ? baseCost : discount;
+        this.promotionService.logUsage(rule.id, benefitValue);
+        this.logger.log(`Applied Ride Promo ${rule.name} for User ${passengerId}: Saved ${benefitValue} points`);
       }
 
       await queryRunner.commitTransaction();
@@ -215,7 +215,7 @@ export class CreditService {
     } catch (err) {
       await queryRunner.rollbackTransaction();
       this.logger.warn(`Deduction failed for Trip ${tripId}: ${err.message}`);
-      return false; 
+      return false;
     } finally {
       await queryRunner.release();
       await this.releaseLock(passengerId);
@@ -223,7 +223,7 @@ export class CreditService {
   }
 
   // ... refund method remains same ...
-    async refund(dto: AdminRefundDto) {
+  async refund(dto: AdminRefundDto) {
     const locked = await this.acquireLock(dto.passengerId);
     if (!locked) throw new BadRequestException('System busy.');
 

@@ -991,7 +991,7 @@ const PassengerApp: React.FC<PassengerAppProps> = ({ riderData }) => {
                             <div className="w-full bg-blue-50 border border-blue-100 p-3 rounded-xl mb-6">
                                 <div className="flex justify-between items-center mb-1">
                                     <span className="text-xs text-slate-500">จำนวนเงิน</span>
-                                    <span className="text-lg font-bold text-slate-800">{topupAmount.toFixed(2)} บาท</span>
+                                    <span className="text-lg font-bold text-slate-800">{Number(topupAmount).toFixed(2)} บาท</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-slate-500">ผู้รับเงิน</span>
