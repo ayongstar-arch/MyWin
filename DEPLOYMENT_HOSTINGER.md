@@ -1,130 +1,84 @@
-# MyWin App - Hostinger Deployment Guide
+# 🚀 MyWin App Deployment Guide (Hostinger Cloud Startup)
+
+This guide is specifically for **Hostinger Cloud Startup** or **Business** plans that support the **Node.js Web App** feature.
+
+---
 
 ## 📋 Prerequisites
 
-ก่อน Deploy ต้องเตรียมสิ่งเหล่านี้:
-
-1. **Hostinger Business Plan** - มี Node.js Web App support ✅  
-2. **MySQL Database** - สร้างจาก Hostinger Panel
-3. **Redis** - ใช้ Upstash (Free tier) หรือ Redis Cloud
+1.  **Hostinger Plan**: Business Web Hosting OR Cloud Startup (Enable Node.js Support).
+2.  **Database**: Create a MySQL Database in hPanel.
+3.  **GitHub Repo**: Your project must be pushed to GitHub.
 
 ---
 
-## 🚀 Step-by-Step Deployment
+## 🛠 Step 1: Prepare Your Project (Already Done)
 
-### Step 1: เตรียม Database
-
-1. เข้า Hostinger Panel → Databases → MySQL
-2. สร้างฐานข้อมูลใหม่:
-   - Database name: `mywin_db`
-   - Username: `mywin_user`
-   - Password: (สร้างรหัสผ่านที่แข็งแรง)
-3. จดข้อมูลไว้สำหรับ `.env`
-
-### Step 2: สร้าง Redis Instance (Upstash)
-
-1. ไปที่ [upstash.com](https://upstash.com) และสมัครสมาชิก (Free)
-2. สร้าง Redis Database ใหม่:
-   - Region: Singapore (ใกล้ที่สุด)
-   - Eviction: Enabled
-3. Copy Redis URL สำหรับ `.env`
-
-### Step 3: Build Application
-
-```bash
-# Install dependencies
-npm install
-
-# Build production bundle
-npm run build
-```
-
-ผลลัพธ์:
-- `client_build/` - React Frontend (Static files)
-- `dist/` - NestJS Backend (Node.js)
-
-### Step 4: Deploy to Hostinger
-
-1. **ใน Hostinger Panel:**
-   - คลิก "+ เพิ่มเว็บไซต์"
-   - เลือก "เว็บแอป Node.js"
-   - เชื่อมต่อ GitHub Repository หรือ อัปโหลดไฟล์
-
-2. **ตั้งค่า Entry Point:**
-   ```
-   dist/main.js
-   ```
-
-3. **ตั้งค่า Environment Variables:**
-   - ไปที่ Settings → Environment Variables
-   - เพิ่มทุกตัวแปรจาก `.env.example`
-
-4. **ตั้งค่า Node Version:**
-   - เลือก Node.js 18.x หรือ 20.x
-
-### Step 5: Test Deployment
-
-เปิด URL ที่ได้: `https://your-site.hostinger.com`
-
-- ทดสอบ Passenger App: `/#passenger`
-- ทดสอบ Driver App: `/#driver`
+We have already configured your project for this deployment:
+*   **Build Script**: `npm run build` builds both NestJS (backend) and React (frontend).
+*   **Postinstall**: Ensures the build runs automatically after `npm install`.
+*   **Entry Point**: `dist/main.js`.
+*   **Frontend Serving**: NestJS is configured to serve the `client_build` folder automatically.
 
 ---
 
-## ⚠️ Important Notes
+## ☁️ Step 2: Deploy on Hostinger (hPanel)
 
-### Redis Workaround
+1.  **Log in to hPanel** and go to **Websites**.
+2.  Click **Add Website** or manage your existing domain.
+3.  Select **"Node.js Web App"** (or search for Node.js in the dashboard).
 
-หาก Hostinger ไม่รองรับ Redis โดยตรง:
+### Configuration Settings:
+*   **Application Root**: `public_html` (or leave default if prompted).
+*   **Application Startup File**: `dist/main.js` (⚠️ IMPORTANT).
+*   **Node.js Version**: Select **18** or **20**.
+*   **Package Management**: Keep as `npm`.
 
-**Option A: ใช้ Upstash (Recommended)**
-- Free tier: 10,000 commands/day
-- ฟรีสำหรับ MVP/Testing
+### Source Code:
+1.  Connect your **GitHub Account**.
+2.  Select the **MyWin Repository**.
+3.  Select the **main** branch.
+4.  **Auto Deployment**: Enable this (so it updates when you push).
 
-**Option B: Disable Redis Features**
-แก้ไข `backend/main.ts`:
-```typescript
-// Comment out Redis adapter
-// const redisIoAdapter = new RedisIoAdapter(app);
-// await redisIoAdapter.connectToRedis();
-// app.useWebSocketAdapter(redisIoAdapter);
-```
+### Environment Variables (Create these in the Dashboard):
+Go to the **Environment Variables** section (or check `.env.example`) and add:
 
-### Custom Domain
-
-1. ซื้อโดเมน (เช่น mywin.co.th)
-2. Hostinger Panel → Domains → Connect
-3. ตั้งค่า DNS records
-
----
-
-## 📁 Files Structure for Upload
-
-```
-mywin-app/
-├── dist/              # Backend (NestJS compiled)
-│   └── main.js        # Entry point
-├── client_build/      # Frontend (React built)
-│   └── index.html
-├── package.json
-├── package-lock.json
-└── node_modules/
-```
+| Key | Value |
+|:--- |:--- |
+| `NODE_ENV` | `production` |
+| `PORT` | `3000` (or whatever Hostinger assigns, usually handled automatically but good to set) |
+| `DB_HOST` | (Your MySQL Host IP) |
+| `DB_USER` | (Your MySQL Username) |
+| `DB_PASSWORD` | (Your MySQL Password) |
+| `DB_NAME` | `mywin_db` (or whatever you created) |
+| `JWT_SECRET` | (A long random string) |
+| `GEMINI_API_KEY` | (Your AI Key) |
+| `REDIS_URL` | (Your Upstash/Redis URL, if using) |
 
 ---
 
-## 🔧 Troubleshooting
+## 🚀 Step 3: Trigger Deployment
 
-| ปัญหา | วิธีแก้ |
-|-------|--------|
-| 502 Bad Gateway | ตรวจสอบ Entry Point ว่าถูกต้อง |
-| 403 Forbidden | ตรวจสอบ Permission (Folder: 755, File: 644), ตรวจสอบว่ามีโฟลเดอร์ `client_build` |
-| Database Error | ตรวจสอบ DB_HOST, DB_USER, DB_PASSWORD |
-| WebSocket ไม่ทำงาน | ตรวจสอบ Redis URL หรือปิด Redis adapter |
-| OTP ไม่ส่ง | ตรวจสอบ SMS API Keys |
+1.  Click **Create** or **Deploy**.
+2.  Hostinger will now:
+    *   Clone your code.
+    *   Run `npm install`.
+    *   Run `npm run build` (via our `postinstall` script).
+    *   Start the server using `node dist/main.js`.
 
-### 📂 File Permissions & Uploads
+---
 
-1. สร้างโฟลเดอร์ `uploads` ที่ root directory (ข้างๆ `dist` และ `client_build`)
-2. คลิกขวาที่โฟลเดอร์ `uploads` -> Permissions -> ตั้งเป็น **755** (User: Read/Write/Exec, Group/World: Read/Exec)
-3. ตรวจสอบว่า `.htaccess` ถูกอัปโหลดไปด้วย (ช่วยจัดการ Route)
+## ✅ Verification
+
+Visit your domain (e.g., `https://mywin-app.com`).
+1.  You should see the **MyWin Landing Page/Login**.
+2.  Test logging in (Backend API connection).
+3.  If you see "403 Forbidden" or "Internal Server Error", check the **Logs** tab in hPanel for Node.js errors.
+
+### Troubleshooting
+*   **Build Failed?** Check if `dist` folder exists via File Manager.
+*   **Frontend 404?** Ensure `client_build` exists next to `dist`.
+*   **Database Error?** Double check credentials in Environment Variables.
+
+---
+**Note:** Since we configured `ServeStaticModule` in NestJS, your React app is served directly by the backend at the root URL `/`.
