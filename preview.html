@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MyWin App Preview</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+            border: 8px solid #1e293b;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+
+        .sos-ring {
+            stroke-dasharray: 175.9;
+            transition: stroke-dashoffset 0.1s;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+
+    <!-- Header -->
+    <div class="text-center py-8">
+        <div class="flex items-center justify-center gap-3 mb-2">
+            <img src="mywin_logo.png" alt="MyWin" class="h-14 rounded-xl shadow-lg" />
+        </div>
+        <p class="text-slate-400">Preview of new features: Real Map, Chat, SOS Button</p>
+    </div>
+
+    <!-- App Selection Tabs -->
+    <div class="flex justify-center gap-4 mb-8">
+        <button onclick="showApp('passenger')" id="btn-passenger"
+            class="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg">
+            🙋 Passenger App
+        </button>
+        <button onclick="showApp('driver')" id="btn-driver"
+            class="px-6 py-3 bg-slate-700 text-white rounded-xl font-bold shadow-lg">
+            🛵 Driver App
+        </button>
+    </div>
+
+    <!-- Phone Preview Container -->
+    <div class="flex justify-center pb-16">
+
+        <!-- Passenger App Preview -->
+        <div id="passenger-app" class="phone-frame bg-slate-50">
+            <div class="h-full flex flex-col">
+
+                <!-- Status Bar -->
+                <div class="bg-slate-900 text-white px-6 pt-10 pb-4 text-xs flex justify-between">
+                    <span>23:16</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openTopup()"
+                            class="bg-slate-800 px-2 py-0.5 rounded text-emerald-400 font-bold hover:bg-slate-700 transition-colors">
+                            💰 120.00
+                        </button>
+                        <span>📶 🔋 100%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="bg-[#F26522] text-white p-4 flex items-center gap-3">
+            <img src="mywin_logo.png" alt="MyWin" class="h-10 rounded-lg" />
+            <div>
+                <h2 class="font-bold text-lg">MyWin</h2>
+                <p class="text-orange-100 text-xs">คนขับกำลังมารับคุณ</p>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="flex-1 relative" id="passenger-map-container">
+            <div id="passenger-map" class="w-full h-full"></div>
+
+            <!-- Booking Overlay (Initial State) -->
+            <div id="booking-overlay" class="absolute inset-x-0 bottom-0 p-4 z-[900] hidden">
+                <div class="bg-white rounded-2xl p-4 shadow-xl border border-slate-200">
+                    <!-- Location Input -->
+                    <div class="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div
+                            class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                            📍</div>
+                        <div class="flex-1">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">รับที่ (ตำแหน่งปัจจุบัน)</div>
+                            <div class="text-sm font-bold text-slate-800">อนุสาวรีย์ชัยสมรภูมิ (เกาะพญาไท)</div>
+                        </div>
+                    </div>
+
+                    <!-- Favorites -->
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-slate-400 mb-2 block ml-1">สถานที่โปรด</label>
+                        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="favorites-list">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Call Button -->
+                    <button onclick="requestRide()"
+                        class="w-full bg-mywin-green text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-200 text-lg hover:bg-emerald-600 active:scale-95 transition-all">
+                        เรียกวินทันที
+                    </button>
+                    <div class="text-center mt-2 text-[10px] text-slate-400">ค่าบริการ 20 บาท</div>
+                </div>
+            </div>
+
+            <!-- LIVE indicator (En Route) -->
+            <div id="en-route-overlay"
+                class="absolute top-4 right-4 bg-slate-900/95 text-white px-3 py-2 rounded-xl shadow-xl z-[1000] flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span class="text-sm font-bold">ETA: 3 นาที</span>
+            </div>
+
+            <!-- Reset/New Ride Button (Dev Tool) -->
+            <button onclick="resetApp()"
+                class="absolute top-4 left-4 bg-white/90 p-2 rounded-lg text-xs font-bold shadow-md z-[1010]">🔄
+                New</button>
+        </div>
+
+        <!-- Driver Info Card (En Route State) -->
+        <div id="driver-info-panel" class="p-4 bg-white border-t border-slate-200">
+            <div class="flex items-center gap-4 mb-4">
+                <div
+                    class="w-14 h-14 bg-slate-100 rounded-full border-2 border-emerald-500 flex items-center justify-center text-2xl">
+                    🧑
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-lg text-slate-800">สมชาย ใจดี</div>
+                    <div class="text-sm text-slate-500">ทะเบียน: 1กข-9999</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-emerald-500 font-bold text-sm flex items-center gap-1">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                        กำลังมา
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <button
+                    class="bg-emerald-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-1 shadow-lg">
+                    📞 โทร
+                </button>
+                <button onclick="openChat()"
+                    class="bg-blue-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-1 shadow-lg">
+                    💬 แชท
+                </button>
+                <button class="bg-red-100 text-red-600 py-3 rounded-xl font-bold text-sm">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+
+        <!-- SOS Button -->
+        <div class="absolute bottom-32 right-4 z-[999]">
+            <button id="sos-btn" onmousedown="startSOS()" onmouseup="cancelSOS()" onmouseleave="cancelSOS()"
+                ontouchstart="startSOS()" ontouchend="cancelSOS()"
+                class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl hover:bg-red-500 active:scale-95 transition-transform relative">
+                <svg class="absolute inset-0 w-full h-full -rotate-90" id="sos-progress">
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="4" />
+                    <circle id="sos-ring" cx="32" cy="32" r="28" fill="none" stroke="white" stroke-width="4"
+                        class="sos-ring" stroke-dashoffset="175.9" stroke-linecap="round" />
+                </svg>
+                <span class="text-white font-bold text-xl relative z-10">🆘</span>
+            </button>
+            <div class="text-center text-[10px] text-slate-500 mt-1">กดค้าง 3 วิ</div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Driver App Preview (Initially Hidden) -->
+    <div id="driver-app" class="phone-frame bg-slate-950 hidden">
+        <div class="h-full flex flex-col">
+
+            <!-- Status Bar -->
+            <div class="bg-black text-white px-6 pt-10 pb-4 text-xs flex justify-between">
+                <span>23:16</span>
+                <span>📶 🔋 85%</span>
+            </div>
+
+            <!-- Header -->
+            <div class="bg-[#F26522] text-white p-4 rounded-b-3xl shadow-lg relative overflow-hidden">
+                <img src="mywin_logo.png" alt="MyWin" class="absolute top-2 right-2 h-16 opacity-30 rounded-lg" />
+                <div class="flex items-center gap-3">
+                    <img src="mywin_logo.png" alt="MyWin" class="h-10 rounded-lg" />
+                    <div>
+                        <h2 class="font-bold text-xl relative z-10">กำลังรับผู้โดยสาร</h2>
+                        <p class="text-orange-100 text-sm relative z-10 flex items-center gap-2">
+                            <span class="bg-white/20 px-2 py-0.5 rounded text-xs">Navigation</span>
+                            อีก 2 นาที • 450 เมตร
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="flex-1 relative" id="driver-map-container">
+                <div id="driver-map" class="w-full h-full"></div>
+
+                <!-- Bottom Controls -->
+                <div class="absolute bottom-4 left-4 right-4 space-y-2 z-[1001]">
+                    <div
+                        class="bg-slate-900/95 backdrop-blur p-4 rounded-2xl border border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center text-lg">
+                                👤</div>
+                            <div>
+                                <div class="font-bold text-sm text-white">คุณลูกค้า</div>
+                                <div class="text-xs text-emerald-400">รีบหน่อยนะครับ</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openChat()"
+                                class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">💬</button>
+                            <button
+                                class="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg">📞</button>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button
+                            class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-red-400 border border-slate-700">ยกเลิก</button>
+                        <button
+                            class="flex-[2] bg-slate-100 text-slate-900 py-4 rounded-xl font-bold shadow-lg">ส่งถึงที่หมาย
+                            (จบงาน)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOS Button for Driver -->
+            <div class="absolute bottom-48 right-4 z-[999]">
+                <button onmousedown="startSOS()" onmouseup="cancelSOS()" onmouseleave="cancelSOS()"
+                    class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-2xl">
+                    <span class="text-white font-bold">🆘</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chat-modal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md h-[600px] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            <!-- Chat Header -->
+            <div class="bg-slate-900 text-white p-4 flex items-center gap-3">
+                <button onclick="closeChat()"
+                    class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">←</button>
+                <div
+                    class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-emerald-500">
+                    🧑</div>
+                <div class="flex-1">
+                    <div class="font-bold">สมชาย ใจดี</div>
+                    <div class="text-xs text-slate-400 flex items-center gap-1">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                        ออนไลน์
+                    </div>
+                </div>
+                <span class="text-2xl">💬</span>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50" id="chat-messages">
+                <!-- Driver message -->
+                <div class="flex justify-start">
+                    <div
+                        class="max-w-[75%] px-4 py-2.5 rounded-2xl rounded-bl-sm bg-white border border-slate-200 shadow-sm">
+                        <div class="text-sm">สวัสดีครับ กำลังไปรับครับ</div>
+                        <div class="text-[10px] text-slate-400 mt-1">23:14</div>
+                    </div>
+                </div>
+                <!-- Passenger message -->
+                <div class="flex justify-end">
+                    <div class="max-w-[75%] px-4 py-2.5 rounded-2xl rounded-br-sm bg-emerald-500 text-white shadow-sm">
+                        <div class="text-sm">รอหน้าร้านค่ะ ใส่เสื้อสีขาว</div>
+                        <div class="text-[10px] text-emerald-100 mt-1">23:15 ✓✓</div>
+                    </div>
+                </div>
+                <!-- Driver message -->
+                <div class="flex justify-start">
+                    <div
+                        class="max-w-[75%] px-4 py-2.5 rounded-2xl rounded-bl-sm bg-white border border-slate-200 shadow-sm">
+                        <div class="text-sm">รับทราบครับ ใกล้ถึงแล้ว</div>
+                        <div class="text-[10px] text-slate-400 mt-1">23:16</div>
+                    </div>
+                </div>
+                <!-- Typing indicator -->
+                <div class="flex justify-start" id="typing-indicator">
+                    <div class="bg-white px-4 py-3 rounded-2xl rounded-bl-sm border border-slate-200 shadow-sm">
+                        <div class="flex gap-1">
+                            <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                                style="animation-delay: 0ms"></span>
+                            <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                                style="animation-delay: 150ms"></span>
+                            <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                                style="animation-delay: 300ms"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Replies -->
+            <div class="px-4 py-2 bg-white border-t border-slate-100">
+                <div class="flex gap-2 overflow-x-auto pb-1">
+                    <button onclick="sendQuickReply('รอหน้าร้านค่ะ')"
+                        class="shrink-0 px-3 py-1.5 bg-slate-100 rounded-full text-xs text-slate-600 font-medium">รอหน้าร้านค่ะ</button>
+                    <button onclick="sendQuickReply('ใส่เสื้อสีขาว')"
+                        class="shrink-0 px-3 py-1.5 bg-slate-100 rounded-full text-xs text-slate-600 font-medium">ใส่เสื้อสีขาว</button>
+                    <button onclick="sendQuickReply('รีบหน่อยนะคะ')"
+                        class="shrink-0 px-3 py-1.5 bg-slate-100 rounded-full text-xs text-slate-600 font-medium">รีบหน่อยนะคะ</button>
+                    <button onclick="sendQuickReply('ขอบคุณค่ะ')"
+                        class="shrink-0 px-3 py-1.5 bg-slate-100 rounded-full text-xs text-slate-600 font-medium">ขอบคุณค่ะ</button>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="p-4 bg-white border-t border-slate-200">
+                <div class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="พิมพ์ข้อความ..."
+                        class="flex-1 bg-slate-100 px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                        onkeypress="if(event.key==='Enter')sendMessage()">
+                    <button onclick="sendMessage()"
+                        class="w-12 h-12 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SOS Confirmation Modal -->
+    <div id="sos-modal"
+        class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[3000] hidden flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl">
+            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="text-5xl">✅</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">ส่งสัญญาณแล้ว!</h2>
+            <p class="text-slate-500 mb-6">
+                ทีมงานได้รับแจ้งเหตุฉุกเฉินแล้ว<br />
+                กรุณาอยู่ในที่ปลอดภัยและรอการติดต่อกลับ
+            </p>
+            <div class="bg-slate-100 p-4 rounded-xl mb-6 text-left">
+                <div class="text-xs text-slate-500 uppercase font-bold mb-2">ตำแหน่งที่ส่ง</div>
+                <div class="text-sm text-slate-700 font-mono">13.756331, 100.501762</div>
+            </div>
+            <div class="space-y-3">
+                <a href="tel:191"
+                    class="block w-full bg-red-600 text-white font-bold py-4 rounded-xl shadow-lg text-center">
+                    📞 โทร 191 (ตำรวจ)
+                </a>
+                <button onclick="closeSOSModal()" class="w-full bg-slate-200 text-slate-700 font-bold py-3 rounded-xl">
+                    ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topup Modal -->
+    <div id="topup-modal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-300">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-800">เติมเงิน (Top Up)</h3>
+                <button onclick="closeTopup()"
+                    class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors">✕</button>
+            </div>
+
+            <!-- Step 1: Input -->
+            <div id="topup-input-step">
+                <div class="mb-6">
+                    <label class="text-xs font-bold text-slate-400 mb-2 block">ระบุจำนวนเงิน (บาท)</label>
+                    <div class="relative">
+                        <input type="number" id="topup-amount"
+                            class="w-full bg-slate-50 border-2 border-slate-200 p-4 rounded-xl text-3xl font-bold text-slate-800 outline-none focus:border-emerald-500 text-center"
+                            placeholder="100.00" value="100" oninput="checkPromo(this.value)">
+                        <div id="topup-promo"
+                            class="absolute -top-3 right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-bounce hidden">
+                            🔥 ได้แถม +20 แต้ม
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="selectAmount(50)"
+                            class="flex-1 py-2 bg-slate-100 rounded-lg text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-200">50</button>
+                        <button onclick="selectAmount(100)"
+                            class="flex-1 py-2 bg-blue-50 rounded-lg text-sm font-bold text-blue-600 border border-blue-200 hover:bg-blue-100">100</button>
+                        <button onclick="selectAmount(200)"
+                            class="flex-1 py-2 bg-slate-100 rounded-lg text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-200">200</button>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="text-xs font-bold text-slate-400 mb-2 block">ชำระผ่าน</label>
+                    <div class="space-y-2">
+                        <div
+                            class="w-full flex items-center p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 cursor-pointer">
+                            <div
+                                class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl mr-3 shadow-sm">
+                                📱</div>
+                            <div class="text-left flex-1">
+                                <div class="font-bold text-sm text-slate-800">PromptPay</div>
+                                <div class="text-[10px] text-slate-500">081-xxx-5678 • บจก. มายวิน</div>
+                            </div>
+                            <div class="text-emerald-500 font-bold">✓</div>
+                        </div>
+                        <div
+                            class="w-full flex items-center p-3 rounded-xl border-2 border-slate-100 bg-white opacity-50 cursor-not-allowed">
+                            <div
+                                class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl mr-3">
+                                🏦</div>
+                            <div class="text-left flex-1">
+                                <div class="font-bold text-sm text-slate-800">Mobile Banking</div>
+                                <div class="text-[10px] text-slate-500">SCB / KBank / BBL</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="nextTopupStep()"
+                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-200 transition-transform active:scale-95">
+                    ดำเนินการต่อ
+                </button>
+            </div>
+
+            <!-- Step 2: QR Code -->
+            <div id="topup-qr-step" class="hidden text-center animate-in zoom-in duration-300">
+                <div class="bg-white p-4 rounded-2xl border-2 border-slate-100 shadow-inner mb-4 inline-block relative">
+                    <img id="topup-qr-img" src="" alt="PromptPay QR" class="w-48 h-48 object-contain">
+                    <div
+                        class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-xl">
+                        <span class="text-sm font-bold text-slate-800">สแกนเพื่อจ่ายเงิน</span>
+                    </div>
+                </div>
+
+                <div class="w-full bg-blue-50 border border-blue-100 p-3 rounded-xl mb-6 shadow-sm">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs text-slate-500">จำนวนเงิน</span>
+                        <span class="text-lg font-bold text-slate-800"><span id="topup-qr-amount">0.00</span> บาท</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-500">ผู้รับเงิน</span>
+                        <span class="text-sm font-bold text-slate-800">บจก. มายวิน เทคโนโลยี</span>
+                    </div>
+                </div>
+
+                <button onclick="confirmTopup()"
+                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-200 transition-transform active:scale-95">
+                    โอนเงินเรียบร้อยแล้ว
+                </button>
+                <button onclick="backToInput()" class="mt-3 text-slate-400 text-sm font-bold hover:text-slate-600">
+                    ← ย้อนกลับ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Maps
+        let passengerMap, driverMap;
+        const centerLat = 13.7563;
+        const centerLng = 100.5018;
+
+        function initMaps() {
+            // Passenger Map
+            passengerMap = L.map('passenger-map', { zoomControl: false }).setView([centerLat, centerLng], 15);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(passengerMap);
+
+            // Markers
+            const passengerPos = [centerLat, centerLng];
+            const driverPos = [centerLat + 0.003, centerLng + 0.002];
+            const destPos = [centerLat + 0.008, centerLng + 0.005];
+
+            // Custom icons
+            const createIcon = (emoji, color) => L.divIcon({
+                html: `<div style="background:${color}; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow: 0 4px 15px ${color}80; border: 3px solid white;">${emoji}</div>`,
+                className: '',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            L.marker(passengerPos, { icon: createIcon('📍', '#3b82f6') }).addTo(passengerMap).bindPopup('คุณอยู่ที่นี่');
+            L.marker(driverPos, { icon: createIcon('🛵', '#10b981') }).addTo(passengerMap).bindPopup('คนขับ');
+            L.marker(destPos, { icon: createIcon('🏁', '#8b5cf6') }).addTo(passengerMap).bindPopup('ปลายทาง');
+
+            // Route line
+            L.polyline([driverPos, passengerPos, destPos], { color: '#10b981', weight: 4, dashArray: '10, 10' }).addTo(passengerMap);
+
+            // Fit bounds
+            passengerMap.fitBounds([passengerPos, driverPos, destPos], { padding: [30, 30] });
+
+            // Driver Map
+            driverMap = L.map('driver-map', { zoomControl: false }).setView([centerLat, centerLng], 15);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(driverMap);
+
+            L.marker(driverPos, { icon: createIcon('🛵', '#10b981') }).addTo(driverMap).bindPopup('คุณอยู่ที่นี่');
+            L.marker(passengerPos, { icon: createIcon('📌', '#f59e0b') }).addTo(driverMap).bindPopup('รับผู้โดยสาร');
+            L.marker(destPos, { icon: createIcon('🏁', '#8b5cf6') }).addTo(driverMap).bindPopup('ส่งผู้โดยสาร');
+
+            L.polyline([driverPos, passengerPos, destPos], { color: '#10b981', weight: 4, dashArray: '10, 10' }).addTo(driverMap);
+            driverMap.fitBounds([driverPos, passengerPos, destPos], { padding: [30, 30] });
+        }
+
+        // Switch between apps
+        function showApp(app) {
+            document.getElementById('passenger-app').classList.toggle('hidden', app !== 'passenger');
+            document.getElementById('driver-app').classList.toggle('hidden', app !== 'driver');
+            document.getElementById('btn-passenger').classList.toggle('bg-emerald-600', app === 'passenger');
+            document.getElementById('btn-passenger').classList.toggle('bg-slate-700', app !== 'passenger');
+            document.getElementById('btn-driver').classList.toggle('bg-emerald-600', app === 'driver');
+            document.getElementById('btn-driver').classList.toggle('bg-slate-700', app !== 'driver');
+
+            // Invalidate map size
+            setTimeout(() => {
+                if (app === 'passenger') passengerMap.invalidateSize();
+                else driverMap.invalidateSize();
+            }, 100);
+        }
+
+        // Chat functions
+        function openChat() {
+            document.getElementById('chat-modal').classList.remove('hidden');
+        }
+
+        function closeChat() {
+            document.getElementById('chat-modal').classList.add('hidden');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage(text, true);
+            input.value = '';
+
+            // Simulate reply
+            setTimeout(() => {
+                addMessage('รับทราบครับ 👍', false);
+            }, 1500);
+        }
+
+        function sendQuickReply(text) {
+            addMessage(text, true);
+            setTimeout(() => {
+                addMessage('รับทราบครับ', false);
+            }, 1000);
+        }
+
+        function addMessage(text, isMe) {
+            const container = document.getElementById('chat-messages');
+            const typing = document.getElementById('typing-indicator');
+
+            const msg = document.createElement('div');
+            msg.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+            msg.innerHTML = `
+                <div class="max-w-[75%] px-4 py-2.5 rounded-2xl ${isMe ? 'rounded-br-sm bg-emerald-500 text-white' : 'rounded-bl-sm bg-white border border-slate-200'} shadow-sm">
+                    <div class="text-sm">${text}</div>
+                    <div class="text-[10px] ${isMe ? 'text-emerald-100' : 'text-slate-400'} mt-1">${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}${isMe ? ' ✓✓' : ''}</div>
+                </div>
+            `;
+
+            container.insertBefore(msg, typing);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // SOS functions
+        let sosTimer = null;
+        let sosProgress = 0;
+
+        function startSOS() {
+            sosProgress = 0;
+            const ring = document.getElementById('sos-ring');
+
+            sosTimer = setInterval(() => {
+                sosProgress += 100 / 30; // 3 seconds = 30 * 100ms
+                ring.style.strokeDashoffset = 175.9 * (1 - sosProgress / 100);
+
+                if (sosProgress >= 100) {
+                    cancelSOS();
+                    triggerSOS();
+                }
+            }, 100);
+
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        function cancelSOS() {
+            if (sosTimer) {
+                clearInterval(sosTimer);
+                sosTimer = null;
+            }
+            sosProgress = 0;
+            document.getElementById('sos-ring').style.strokeDashoffset = 175.9;
+        }
+
+        function triggerSOS() {
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+            document.getElementById('sos-modal').classList.remove('hidden');
+        }
+
+        function closeSOSModal() {
+            document.getElementById('sos-modal').classList.add('hidden');
+        }
+
+        // Topup Functions
+        function openTopup() {
+            document.getElementById('topup-modal').classList.remove('hidden');
+            checkPromo(document.getElementById('topup-amount').value);
+        }
+
+        function closeTopup() {
+            document.getElementById('topup-modal').classList.add('hidden');
+            setTimeout(backToInput, 300);
+        }
+
+        function selectAmount(amount) {
+            document.getElementById('topup-amount').value = amount;
+            checkPromo(amount);
+        }
+
+        function checkPromo(amount) {
+            const promoEl = document.getElementById('topup-promo');
+            if (amount >= 50) {
+                promoEl.classList.remove('hidden');
+                promoEl.innerHTML = `🔥 ได้แถม +${amount >= 100 ? 20 : 10} แต้ม`;
+            } else {
+                promoEl.classList.add('hidden');
+            }
+        }
+
+        function nextTopupStep() {
+            const amount = document.getElementById('topup-amount').value;
+            if (!amount) return;
+
+            // Show QR
+            document.getElementById('topup-input-step').classList.add('hidden');
+            document.getElementById('topup-qr-step').classList.remove('hidden');
+
+            // Generate QR
+            const qrUrl = `https://promptpay.io/0812345678/${amount}`;
+            document.getElementById('topup-qr-img').src = qrUrl;
+            document.getElementById('topup-qr-amount').innerText = Number(amount).toFixed(2);
+        }
+
+        function confirmTopup() {
+            alert('เติมเงินสำเร็จ! ยอดเงินจะเข้ากระเป๋าทันที');
+            closeTopup();
+        }
+
+        function backToInput() {
+            document.getElementById('topup-input-step').classList.remove('hidden');
+            document.getElementById('topup-qr-step').classList.add('hidden');
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            initMaps();
+            initFavorites();
+            // Default to Booking Mode for testing Favorites
+            toggleAppMode('BOOKING');
+        };
+
+        // --- APP STATE LOGIC ---
+        function toggleAppMode(mode) {
+            const bookingOverlay = document.getElementById('booking-overlay');
+            const enRouteOverlay = document.getElementById('en-route-overlay');
+            // Check for driver-info-panel by generic query or ID if consistent
+            // ID 'driver-info-panel' was added in previous step
+            const driverInfoPanel = document.getElementById('driver-info-panel');
+
+            if (mode === 'BOOKING') {
+                bookingOverlay.classList.remove('hidden');
+                enRouteOverlay.classList.add('hidden');
+                if (driverInfoPanel) driverInfoPanel.classList.add('hidden');
+            } else {
+                bookingOverlay.classList.add('hidden');
+                enRouteOverlay.classList.remove('hidden');
+                if (driverInfoPanel) driverInfoPanel.classList.remove('hidden');
+            }
+        }
+
+        function requestRide() {
+            // Simulate Requesting
+            if (confirm('ยืนยันการเรียกรถ?')) {
+                toggleAppMode('EN_ROUTE');
+            }
+        }
+
+        function resetApp() {
+            // Reset to Booking
+            if (confirm('เริ่มจำลองใหม่?')) {
+                toggleAppMode('BOOKING');
+            }
+        }
+
+        // --- FAVORITES LOGIC ---
+        let favorites = [
+            { type: 'HOME', name: 'บ้าน', location: null },
+            { type: 'WORK', name: 'ที่ทำงาน', location: null }
+        ];
+
+        function initFavorites() {
+            const saved = localStorage.getItem('mywin_preview_favorites');
+            if (saved) {
+                try { favorites = JSON.parse(saved); } catch (e) { }
+            }
+            renderFavorites();
+        }
+
+        function renderFavorites() {
+            const container = document.getElementById('favorites-list');
+            container.innerHTML = favorites.map(fav => `
+                <button 
+                    onclick="handleFavoriteClick('${fav.type}')" 
+                    class="flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all whitespace-nowrap shrink-0
+                    ${fav.location ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-50 border-dashed border-slate-300 text-slate-400'}"
+                >
+                    <span class="text-lg">${fav.type === 'HOME' ? '🏠' : '🏢'}</span>
+                    <span class="text-sm font-bold">${fav.name}</span>
+                    ${fav.location ?
+                    `<span onclick="event.stopPropagation(); clearFavorite('${fav.type}')" class="text-slate-300 hover:text-red-500 ml-1 text-xs">✕</span>`
+                    : `<span class="text-[10px] bg-slate-200 px-1.5 rounded text-slate-500 ml-1">+ ตั้งค่า</span>`
+                }
+                </button>
+            `).join('');
+        }
+
+        function handleFavoriteClick(type) {
+            const fav = favorites.find(f => f.type === type);
+            if (fav.location) {
+                // Select it
+                alert(`📍 ตั้งจุดหมายเป็น: ${fav.name}\n(Lat: ${fav.location.lat}, Lng: ${fav.location.lng})`);
+                // Visual feedback only for now
+            } else {
+                // Set it
+                if (confirm(`ตั้งค่า "${fav.name}" เป็นตำแหน่งปัจจุบัน?`)) {
+                    // Mock current location
+                    const mockLoc = { lat: 13.7563, lng: 100.5018 };
+                    saveFavorite(type, mockLoc);
+                }
+            }
+        }
+
+        function saveFavorite(type, location) {
+            favorites = favorites.map(f => f.type === type ? { ...f, location } : f);
+            localStorage.setItem('mywin_preview_favorites', JSON.stringify(favorites));
+            renderFavorites();
+            alert('บันทึกเรียบร้อย!');
+        }
+
+        function clearFavorite(type) {
+            if (confirm('ลบรายการนี้?')) {
+                favorites = favorites.map(f => f.type === type ? { ...f, location: null } : f);
+                localStorage.setItem('mywin_preview_favorites', JSON.stringify(favorites));
+                renderFavorites();
+            }
+        }
+    </script>
+</body>
+
+</html>

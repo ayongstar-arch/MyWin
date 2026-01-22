@@ -1,0 +1,8 @@
+{
+  "name": "MyWin",
+  "description": "MyWin แอปเรียกวินมอเตอร์ไซค์สำหรับชุมชน เรียกง่าย ปลอดภัย รองรับวินทั่วประเทศไทย ระบบคิวเป็นธรรม",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

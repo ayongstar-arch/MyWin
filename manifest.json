@@ -1,0 +1,21 @@
+{
+  "short_name": "MyWin",
+  "name": "MyWin: แอปเรียกวินชุมชน",
+  "icons": [
+    {
+      "src": "/mywin_logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/mywin_logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "orientation": "portrait"
+}

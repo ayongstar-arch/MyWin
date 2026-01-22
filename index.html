@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- PWA / Mobile Web App Capable -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="/mywin_logo.png">
+    <link rel="icon" type="image/png" href="/mywin_logo.png" />
+    
+    <!-- SEO & Branding Strategy Phase 1 -->
+    <title>MyWin – แอปเรียกวินมอเตอร์ไซค์ใกล้คุณ</title>
+    <meta name="description" content="MyWin แอปเรียกวินมอเตอร์ไซค์สำหรับชุมชน เรียกง่าย ปลอดภัย รองรับวินทั่วประเทศไทย ระบบคิวเป็นธรรม" />
+    <meta name="keywords" content="วินมอเตอร์ไซค์, เรียกวิน, แอปเรียกวิน, วินใกล้ฉัน, มอเตอร์ไซค์รับจ้าง, MyWin, แอปวินชุมชน" />
+    <meta name="author" content="MyWin Team" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Social Media (Brand Identity) -->
+    <meta property="og:title" content="MyWin – แอปเรียกวินมอเตอร์ไซค์ใกล้คุณ" />
+    <meta property="og:description" content="เรียกวินง่าย ปลอดภัย ด้วย MyWin เหมาะสำหรับวินมอเตอร์ไซค์ในชุมชน" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="th_TH" />
+    <meta property="og:image" content="/mywin_logo.png" />
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                850: '#1e293b',
+                900: '#0f172a',
+                950: '#020617',
+              },
+              mywin: {
+                 orange: '#FF6F00',
+                 green: '#28A745',
+                 blue: '#1E88E5'
+              }
+            },
+            fontFamily: {
+              mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+              sans: ['Noto Sans Thai', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background-color: #0f172a;
+        color: #f8fafc;
+        font-family: 'Noto Sans Thai', sans-serif;
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+      }
+      /* Custom scrollbar for log panels */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1e293b;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+      /* Leaflet Custom Overrides */
+      .leaflet-container {
+        background: #0f172a !important;
+        font-family: 'Noto Sans Thai', sans-serif;
+      }
+      .custom-marker-icon {
+        background: transparent;
+        border: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "react": "https://esm.sh/react@18.2.0",
+    "@nestjs/common": "https://esm.sh/@nestjs/common@^11.1.11",
+    "ioredis": "https://esm.sh/ioredis@^5.9.1",
+    "class-validator": "https://esm.sh/class-validator@^0.14.3",
+    "rxjs/": "https://esm.sh/rxjs@^7.8.2/",
+    "rxjs": "https://esm.sh/rxjs@^7.8.2",
+    "@nestjs/core": "https://esm.sh/@nestjs/core@^11.1.11",
+    "@nestjs/typeorm": "https://esm.sh/@nestjs/typeorm@^11.0.0",
+    "typeorm": "https://esm.sh/typeorm@^0.3.28",
+    "events": "https://esm.sh/events@^3.3.0",
+    "@nestjs/config": "https://esm.sh/@nestjs/config@^4.0.2",
+    "@nestjs/websockets": "https://esm.sh/@nestjs/websockets@^11.1.11",
+    "@nestjs/platform-socket.io": "https://esm.sh/@nestjs/platform-socket.io@^11.1.11",
+    "socket.io": "https://esm.sh/socket.io@^4.7.4",
+    "socket.io-client": "https://esm.sh/socket.io-client@^4.7.4",
+    "leaflet": "https://esm.sh/leaflet@1.9.4",
+    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?external=react,react-dom,leaflet",
+    "path": "https://esm.sh/path@^0.12.7",
+    "@nestjs/serve-static": "https://esm.sh/@nestjs/serve-static@^5.0.4",
+    "@nestjs/jwt": "https://esm.sh/@nestjs/jwt@^11.0.2",
+    "axios": "https://esm.sh/axios@^1.13.2",
+    "buffer": "https://esm.sh/buffer@^6.0.3",
+    "@googlemaps/google-maps-services-js": "https://esm.sh/@googlemaps/google-maps-services-js@^3.4.2",
+    "redis": "https://esm.sh/redis@^5.10.0",
+    "compression": "https://esm.sh/compression@^1.8.1",
+    "@nestjs/throttler": "https://esm.sh/@nestjs/throttler@^6.5.0",
+    "@socket.io/redis-adapter": "https://esm.sh/@socket.io/redis-adapter@^8.3.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
