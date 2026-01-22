@@ -13,6 +13,8 @@
     ],
     "compilerOptions": {
         "module": "commonjs",
+        "moduleResolution": "node",
+        "allowImportingTsExtensions": false,
         "noEmit": false,
         "outDir": "./dist"
     }
