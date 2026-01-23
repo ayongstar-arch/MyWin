@@ -82,8 +82,10 @@ import { LoggingInterceptor, ResilienceInterceptor } from './common/interceptors
       entities: [DriverEntity, TripEntity, ChatMessageEntity, PassengerEntity],
       // CRITICAL FOR PRODUCTION: Disable synchronize to prevent data loss
       synchronize: process.env.NODE_ENV !== 'production',
-      logging: false,
-      extra: { connectionLimit: 20 }, // Increased pool size for high concurrency
+      logging: process.env.NODE_ENV !== 'production',
+      retryAttempts: 3,
+      retryDelay: 3000,
+      extra: { connectionLimit: 20 },
       autoLoadEntities: true,
     }),
 

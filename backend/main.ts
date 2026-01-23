@@ -26,15 +26,18 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // 4. Setup Redis Adapter for Scalable WebSockets
-  const redisIoAdapter = new RedisIoAdapter(app);
-  try {
-    await redisIoAdapter.connectToRedis();
-    app.useWebSocketAdapter(redisIoAdapter);
-    logger.log('Redis Adapter for Socket.IO initialized');
-  } catch (e) {
-    logger.error('Failed to connect to Redis for Socket.IO', e);
-    // Fallback to default memory adapter if Redis fails (not recommended for prod)
+  // 4. Setup Redis Adapter for Scalable WebSockets (Optional)
+  if (process.env.REDIS_URL) {
+    const redisIoAdapter = new RedisIoAdapter(app);
+    try {
+      await redisIoAdapter.connectToRedis();
+      app.useWebSocketAdapter(redisIoAdapter);
+      logger.log('Redis Adapter for Socket.IO initialized');
+    } catch (e) {
+      logger.warn('Failed to connect to Redis for Socket.IO, using default memory adapter');
+    }
+  } else {
+    logger.log('REDIS_URL not set, using default memory adapter for Socket.IO');
   }
 
   // 5. Start Server
