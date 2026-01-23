@@ -6,7 +6,7 @@
     "prebuild": "rimraf dist",
     "build": "npm run build:client && npm run build:server",
     "postinstall": "npm run build",
-    "build:client": "vite build --outDir client_build",
+    "build:client": "vite build --outDir client_build && node -e \"require('fs').renameSync('client_build/src/index.html','client_build/index.html');require('fs').rmdirSync('client_build/src')\"",
     "build:server": "nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
